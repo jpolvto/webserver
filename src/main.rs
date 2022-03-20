@@ -2,21 +2,22 @@ mod models;
 
 use std::fs::File;
 use std::io::Read;
+use std::sync::Mutex;
 use actix_web::{web, App, HttpServer, Responder, HttpRequest};
 use crate::models::User;
 
 pub struct AppStateWithData {
-    pub data :Vec<User>,
+    pub data : Mutex <Vec<User>>,
 }
 
 pub async fn get_users(data: web::Data<AppStateWithData>) -> impl Responder {
-    let serialized = serde_json::to_string(&data.data).unwrap();
+    let serialized = serde_json::to_string(&*data.data.lock().unwrap()).unwrap();
     format!("{}", serialized)
 }
 
 pub async fn get_user_by_id(req: HttpRequest, data: web::Data<AppStateWithData>) -> impl Responder {
     let id: i32 = req.match_info().get("id").unwrap().parse().unwrap();
-    let parsed_data = &data.data;
+    let parsed_data = &*data.data.lock().unwrap();
     let user = parsed_data.into_iter().find(|a| a.id == id).unwrap();
     let serialized = serde_json::to_string(&user).unwrap();
     format!("{}", serialized)
@@ -37,7 +38,7 @@ async fn main() -> std::io::Result<()> {
     let mut file = File::open("src/data.json").unwrap();
     let mut buff = String::new();
     file.read_to_string(&mut buff).unwrap();
-    let json_data:Vec<User> = serde_json::from_str(&mut buff).unwrap();
+    let json_data:Mutex<Vec<User>> = serde_json::from_str(&mut buff).unwrap();
 
     let data = web::Data::new(AppStateWithData {
         data: json_data,
