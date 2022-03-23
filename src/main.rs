@@ -1,4 +1,4 @@
-mod router;
+mod routers;
 mod models;
 
 use actix_web::{App, HttpServer, web};
@@ -6,7 +6,7 @@ use bson::{ Document};
 use mongodb::{Client};
 use mongodb::options::ClientOptions;
 
-use crate::router::{all_users, delete_user_by_id, get_user_by_id, post_user};
+use crate::routers::{all_users, delete_user_by_id, get_user_by_id, post_user};
 
 #[actix_rt::main]
 async fn main() -> std::io::Result<()> {
