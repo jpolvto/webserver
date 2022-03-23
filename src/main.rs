@@ -1,19 +1,16 @@
 use actix_web::{App, HttpRequest, HttpResponse, HttpServer, Responder, web};
-use actix_web::http::StatusCode;
 use bson::{doc, Document};
-use mongodb::{Client, Collection, Database};
-use mongodb::options::ClientOptions;
-use serde_json;
 use futures_util::stream::StreamExt;
+use mongodb::{Client, Collection};
+use mongodb::options::ClientOptions;
 
 pub struct AppState {
-    pub data: Database,
+    pub data: Collection<Document>,
 }
 
 pub async fn all_users(data: web::Data<AppState>) -> impl Responder {
-    let user_collection: Collection<Document> = data.data.collection("users");
-    let mut cursor = user_collection.find(doc! {}, None).await.unwrap();
 
+    let mut cursor = data.data.find(doc! {}, None).await.unwrap();
     let mut results: Vec<Document> = Vec::new();
 
     while let Some(result) = cursor.next().await {
@@ -32,9 +29,7 @@ pub async fn all_users(data: web::Data<AppState>) -> impl Responder {
 
 pub async fn get_user_by_id(req: HttpRequest, data: web::Data<AppState>) -> impl Responder {
     let id: i32 = req.match_info().get("id").unwrap().parse().unwrap();
-    let user_collection: Collection<Document> = data.data.collection("users");
-    let result = user_collection.find_one(doc! { "id":  id }, None).await.unwrap();
-
+    let result = data.data.find_one(doc! { "id":  id }, None).await.unwrap();
     let mut results: Vec<Document> = Vec::new();
 
     if let Some(doc) = result {
@@ -46,14 +41,13 @@ pub async fn get_user_by_id(req: HttpRequest, data: web::Data<AppState>) -> impl
 
 #[actix_rt::main]
 async fn main() -> std::io::Result<()> {
-    let database_url = "mongodb://127.0.0.1:27017";
-    let database_name = "actix-web";
-    let options = ClientOptions::parse(&database_url).await.unwrap();
+    let options = ClientOptions::parse("mongodb://127.0.0.1:27017").await.unwrap();
     let client = Client::with_options(options).unwrap();
-    let db = client.database(&database_name);
+    let db = client.database("actix-web");
+    let user_collection: Collection<Document> = db.collection("users");
 
     let data = web::Data::new(AppState {
-        data: db,
+        data: user_collection,
     });
 
     HttpServer::new(move || {
