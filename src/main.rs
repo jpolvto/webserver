@@ -1,57 +1,66 @@
-mod models;
+use actix_web::{App, HttpRequest, HttpResponse, HttpServer, Responder, web};
+use actix_web::http::StatusCode;
+use bson::{doc, Document};
+use mongodb::{Client, Collection, Database};
+use mongodb::options::ClientOptions;
+use serde_json;
+use futures_util::stream::StreamExt;
 
-use std::fs::File;
-use std::io::Read;
-use std::sync::Mutex;
-use actix_web::{web, App, HttpServer, Responder, HttpRequest};
-use crate::models::User;
-
-pub struct AppStateWithData {
-    pub data : Mutex <Vec<User>>,
+pub struct AppState {
+    pub data: Database,
 }
 
-pub async fn get_users(data: web::Data<AppStateWithData>) -> impl Responder {
-    let serialized = serde_json::to_string(&*data.data.lock().unwrap()).unwrap();
-    format!("{}", serialized)
+pub async fn all_users(data: web::Data<AppState>) -> impl Responder {
+    let user_collection: Collection<Document> = data.data.collection("users");
+    let mut cursor = user_collection.find(doc! {}, None).await.unwrap();
+
+    let mut results: Vec<Document> = Vec::new();
+
+    while let Some(result) = cursor.next().await {
+        match result {
+            Ok(document) => {
+                results.push(document);
+            }
+            Err(_) => {
+                return HttpResponse::InternalServerError().finish();
+            }
+        }
+    }
+
+    HttpResponse::Ok().json(results)
 }
 
-pub async fn get_user_by_id(req: HttpRequest, data: web::Data<AppStateWithData>) -> impl Responder {
+pub async fn get_user_by_id(req: HttpRequest, data: web::Data<AppState>) -> impl Responder {
     let id: i32 = req.match_info().get("id").unwrap().parse().unwrap();
-    let parsed_data = &*data.data.lock().unwrap();
-    let user = parsed_data.into_iter().find(|a| a.id == id).unwrap();
-    let serialized = serde_json::to_string(&user).unwrap();
-    format!("{}", serialized)
-}
+    let user_collection: Collection<Document> = data.data.collection("users");
+    let result = user_collection.find_one(doc! { "id":  id }, None).await.unwrap();
 
-pub async fn add_user() -> impl Responder {
-    format!("hello from add user")
-}
+    let mut results: Vec<Document> = Vec::new();
 
-pub async fn delete_user() -> impl Responder {
-    format!("hello from delete user")
+    if let Some(doc) = result {
+        results.push(doc);
+    }
+
+    HttpResponse::Ok().json(results)
 }
 
 #[actix_rt::main]
 async fn main() -> std::io::Result<()> {
+    let database_url = "mongodb://127.0.0.1:27017";
+    let database_name = "actix-web";
+    let options = ClientOptions::parse(&database_url).await.unwrap();
+    let client = Client::with_options(options).unwrap();
+    let db = client.database(&database_name);
 
-    // Load data from json file
-    let mut file = File::open("src/data.json").unwrap();
-    let mut buff = String::new();
-    file.read_to_string(&mut buff).unwrap();
-    let json_data:Mutex<Vec<User>> = serde_json::from_str(&mut buff).unwrap();
-
-    let data = web::Data::new(AppStateWithData {
-        data: json_data,
+    let data = web::Data::new(AppState {
+        data: db,
     });
 
-    // Start http server
     HttpServer::new(move || {
-    App::new()
-        .app_data(data.clone()) // <- register the created data
-        .route("/users", web::get().to(get_users))
-        .route("/users/{id}", web::get().to(get_user_by_id))
-        .route("/users", web::get().to(add_user))
-        .route("/users/{id}", web::get().to(delete_user))
+        App::new()
+            .app_data(data.clone()) // <- register the created data
+            .route("/users", web::get().to(all_users))
+            .route("/users/{id}", web::get().to(get_user_by_id))
     })
         .bind("127.0.0.1:8080")?
         .run()
