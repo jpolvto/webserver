@@ -44,15 +44,10 @@ async fn main() -> std::io::Result<()> {
     let options = ClientOptions::parse("mongodb://127.0.0.1:27017").await.unwrap();
     let client = Client::with_options(options).unwrap();
     let db = client.database("actix-web");
-    let user_collection: Collection<Document> = db.collection("users");
-
-    let data = web::Data::new(AppState {
-        data: user_collection,
-    });
 
     HttpServer::new(move || {
         App::new()
-            .app_data(data.clone()) // <- register the created data
+            .app_data(db.collection::<Document>("users"))
             .route("/users", web::get().to(all_users))
             .route("/users/{id}", web::get().to(get_user_by_id))
     })
