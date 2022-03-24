@@ -13,3 +13,4 @@ chrono = "0.4" # Used for setting DateTimes
 serde = "1" # Used in the Map Data into Structs section
 bson = "2.1.0"
 futures-util = "0.3"
+dotenv = "0.15.0"
