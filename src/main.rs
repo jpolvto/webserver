@@ -13,7 +13,7 @@ use crate::routes::{all_users, delete_user_by_id, get_user_by_id, post_user};
 #[actix_rt::main]
 async fn main() -> std::io::Result<()> {
     dotenv::dotenv().ok();
-    let host_name = format!("mongodb+srv://{}:{}@cluster0.17s4f.mongodb.net/actix-webserver?retryWrites=true&w=majority", env::var("user").unwrap(), env::var("password").unwrap());
+    let host_name = format!("mongodb+srv://{}:{}@cluster0.17s4f.mongodb.net/actix-webserver?retryWrites=true&w=majority", env::var("USER").unwrap(), env::var("PASSWORD").unwrap());
     let options = ClientOptions::parse(&host_name).await.unwrap();
     let client = Client::with_options(options).unwrap();
     let db = client.database("actix-webserver");
