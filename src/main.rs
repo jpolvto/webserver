@@ -1,3 +1,5 @@
+extern crate alloc;
+
 mod routes;
 mod models;
 
@@ -8,7 +10,7 @@ use mongodb::{Client, Collection};
 use mongodb::options::ClientOptions;
 use dotenv;
 use crate::models::AppState;
-use crate::routes::{all_users, delete_user_by_id, get_user_by_id, post_user};
+use crate::routes::{all_users, delete_user_by_id, get_users_by_id, post_users};
 
 #[actix_rt::main]
 async fn main() -> std::io::Result<()> {
@@ -27,8 +29,8 @@ async fn main() -> std::io::Result<()> {
         App::new()
             .app_data(data.clone()) // <- register the created data
             .route("/users", web::get().to(all_users))
-            .route("/users", web::post().to(post_user))
-            .route("/users/{id}", web::get().to(get_user_by_id))
+            .route("/users", web::post().to(post_users))
+            .route("/users/{id}", web::get().to(get_users_by_id))
             .route("/users/{id}", web::delete().to(delete_user_by_id))
     })
         .bind("127.0.0.1:8080")?
