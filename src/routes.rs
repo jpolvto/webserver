@@ -42,8 +42,8 @@ pub async fn get_user_by_id(req: HttpRequest, data: web::Data<models::AppState>)
 }
 
 pub async fn post_user(info: web::Json<models::User>, data: web::Data<models::AppState>) -> impl Responder {
-    let result = data.data.insert_one(doc! { "id": &info.id, "email": &info.email }, None).await.unwrap();
-    HttpResponse::Ok().json(doc! { "_id": result.inserted_id, "id": &info.id, "email": &info.email })
+    data.data.insert_one(doc! { "id": &info.id, "email": &info.email }, None).await.unwrap();
+    HttpResponse::Ok().json(doc! { "id": &info.id, "email": &info.email })
 }
 
 pub async fn delete_user_by_id(req: HttpRequest, data: web::Data<models::AppState>) -> impl Responder {
