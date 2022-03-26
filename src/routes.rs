@@ -9,7 +9,7 @@ pub async fn all_users(data: web::Data<models::AppState>) -> impl Responder {
 
     let mut cursor= match data.data.find(doc! {}, None).await {
         Ok(result) => result,
-        Err(_) => {return HttpResponse::NotFound().finish();}
+        _ => {return HttpResponse::NotFound().finish();}
     };
 
     let mut results: Vec<User> = Vec::new();
@@ -22,7 +22,7 @@ pub async fn all_users(data: web::Data<models::AppState>) -> impl Responder {
                     results.push(user);
                 }
             }
-            Err(_) => {
+            _ => {
                 return HttpResponse::InternalServerError().finish();
             }
         }
@@ -52,7 +52,7 @@ pub async fn get_users_by_id(req: HttpRequest, data: web::Data<models::AppState>
 
     let mut cursor= match data.data.find(doc! { "id":  id }, None).await {
         Ok(result) => result,
-        Err(_) => {return HttpResponse::NotFound().finish();}
+        _ => {return HttpResponse::NotFound().finish();}
     };
 
     let mut results: Vec<User> = Vec::new();
@@ -65,7 +65,7 @@ pub async fn get_users_by_id(req: HttpRequest, data: web::Data<models::AppState>
                     results.push(user);
                 }
             }
-            Err(_) => {
+            _ => {
                 return HttpResponse::InternalServerError().finish();
             }
         }
@@ -87,7 +87,7 @@ pub async fn post_users(info: web::Json<Vec<User>>, data: web::Data<models::AppS
         Ok(result) => {
             let inserts: Vec<Bson> = result.inserted_ids.into_values().collect();
             HttpResponse::Ok().json(doc! { "Entries inserted:": inserts }) }
-        Err(_) => { HttpResponse::NotFound().finish() }
+        _ => { HttpResponse::NotFound().finish() }
     }
 }
 
@@ -111,6 +111,6 @@ pub async fn delete_user_by_id(req: HttpRequest, data: web::Data<models::AppStat
 
     return match data.data.delete_many(doc! { "id":  id }, None).await {
         Ok(result) => { HttpResponse::Ok().json(doc! { "Number of entries deleted:": result.deleted_count.to_string() }) }
-        Err(_) => { HttpResponse::NotFound().finish() }
+        _ => { HttpResponse::NotFound().finish() }
     };
 }
