@@ -17,10 +17,9 @@ pub async fn all_users(data: web::Data<models::AppState>) -> impl Responder {
     while let Some(result) = cursor.next().await {
         match result {
             Ok(document) => {
-                let optional_user = User::try_from(&document);
-                match optional_user {
-                    Ok(user) => results.push(user),
-                    _ => {}
+                let optional_user = User::from_document(document);
+                if let Some(user) = optional_user {
+                    results.push(user);
                 }
             }
             _ => {
@@ -61,10 +60,9 @@ pub async fn get_users_by_id(req: HttpRequest, data: web::Data<models::AppState>
     while let Some(result) = cursor.next().await {
         match result {
             Ok(document) => {
-                let optional_user = User::try_from(&document);
-                match optional_user {
-                    Ok(user) => results.push(user),
-                    _ => {}
+                let optional_user = User::from_document(document);
+                if let Some(user) = optional_user {
+                    results.push(user);
                 }
             }
             _ => {
