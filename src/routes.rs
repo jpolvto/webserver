@@ -1,8 +1,8 @@
 use actix_web::{HttpRequest, HttpResponse, Responder, web, get, delete, post};
-use bson::{Bson, doc};
+use bson::{Bson, doc, Document};
 use futures_util::StreamExt;
 use crate::models;
-use crate::models::{User, document_to_user, user_to_document};
+use crate::models::{User};
 
 #[get("/users")]
 pub async fn all_users(data: web::Data<models::AppState>) -> impl Responder {
@@ -17,9 +17,10 @@ pub async fn all_users(data: web::Data<models::AppState>) -> impl Responder {
     while let Some(result) = cursor.next().await {
         match result {
             Ok(document) => {
-                let optional_user = document_to_user(document);
-                if let Some(user) = optional_user {
-                    results.push(user);
+                let optional_user = User::try_from(&document);
+                match optional_user {
+                    Ok(user) => results.push(user),
+                    _ => {}
                 }
             }
             _ => {
@@ -60,9 +61,10 @@ pub async fn get_users_by_id(req: HttpRequest, data: web::Data<models::AppState>
     while let Some(result) = cursor.next().await {
         match result {
             Ok(document) => {
-                let optional_user = document_to_user(document);
-                if let Some(user) = optional_user {
-                    results.push(user);
+                let optional_user = User::try_from(&document);
+                match optional_user {
+                    Ok(user) => results.push(user),
+                    _ => {}
                 }
             }
             _ => {
@@ -77,10 +79,11 @@ pub async fn get_users_by_id(req: HttpRequest, data: web::Data<models::AppState>
 #[post("/users")]
 pub async fn post_users(info: web::Json<Vec<User>>, data: web::Data<models::AppState>) -> impl Responder {
 
-    let mut docs = Vec::new();
+    let mut docs: Vec<Document> = Vec::new();
 
     for user in info.0 {
-        docs.push(user_to_document(user))
+        let doc = User::into(user);
+        docs.push(doc)
     }
 
     match data.data.insert_many(docs, None).await {
