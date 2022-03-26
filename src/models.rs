@@ -13,7 +13,7 @@ pub struct User {
     pub email: String
 }
 
-pub fn user_from_document(document: bson::Document) -> Option<User> {
+pub fn document_to_user(document: bson::Document) -> Option<User> {
 
     let _id = document.get("id");
     let _email = document.get("email");

@@ -2,7 +2,7 @@ use actix_web::{HttpRequest, HttpResponse, Responder, web, get, delete, post};
 use bson::{Bson, doc};
 use futures_util::StreamExt;
 use crate::models;
-use crate::models::{User, user_from_document, user_to_document};
+use crate::models::{User, document_to_user, user_to_document};
 
 #[get("/users")]
 pub async fn all_users(data: web::Data<models::AppState>) -> impl Responder {
@@ -17,7 +17,7 @@ pub async fn all_users(data: web::Data<models::AppState>) -> impl Responder {
     while let Some(result) = cursor.next().await {
         match result {
             Ok(document) => {
-                let optional_user = user_from_document(document);
+                let optional_user = document_to_user(document);
                 if let Some(user) = optional_user {
                     results.push(user);
                 }
@@ -60,7 +60,7 @@ pub async fn get_users_by_id(req: HttpRequest, data: web::Data<models::AppState>
     while let Some(result) = cursor.next().await {
         match result {
             Ok(document) => {
-                let optional_user = user_from_document(document);
+                let optional_user = document_to_user(document);
                 if let Some(user) = optional_user {
                     results.push(user);
                 }
