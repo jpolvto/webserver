@@ -1,11 +1,10 @@
-use actix_web::{HttpRequest, HttpResponse, Responder, web};
+use actix_web::{HttpRequest, HttpResponse, Responder, web, get, delete, post};
 use bson::{Bson, doc};
 use futures_util::StreamExt;
 use crate::models;
-use crate::models::{User, user_from_document};
+use crate::models::{User, user_from_document, user_to_document};
 
-const MAX_SIZE: usize = 262_144; // max payload size is 256k
-
+#[get("/users")]
 pub async fn all_users(data: web::Data<models::AppState>) -> impl Responder {
 
     let mut cursor= match data.data.find(doc! {}, None).await {
@@ -32,6 +31,7 @@ pub async fn all_users(data: web::Data<models::AppState>) -> impl Responder {
     HttpResponse::Ok().json(results)
 }
 
+#[get("/users/{id}")]
 pub async fn get_users_by_id(req: HttpRequest, data: web::Data<models::AppState>) -> impl Responder {
 
     let id: i32 = match req.match_info().get("id") {
@@ -74,49 +74,13 @@ pub async fn get_users_by_id(req: HttpRequest, data: web::Data<models::AppState>
     HttpResponse::Ok().json(results)
 }
 
-pub async fn post_users(mut payload: web::Payload, data: web::Data<models::AppState>) -> impl Responder {
-
-    let mut body = web::BytesMut::new();
-    while let Some(chunk) = payload.next().await {
-        match chunk {
-            Ok(chunk_result) => {
-                if (body.len() + chunk_result.len()) > MAX_SIZE { // limit max size of in-memory payload
-                    return HttpResponse::InternalServerError().finish()
-                }
-                body.extend_from_slice(&chunk_result);}
-            Err(_) => {
-                return HttpResponse::BadRequest().finish()
-            }
-        };
-
-    }
-
-    let input;
-
-    match String::from_utf8(body.to_vec()) {
-        Ok(value) => {
-            input = value;
-        }
-        Err(_) => {
-            return HttpResponse::BadRequest().finish()
-        }
-    }
-
-    let all_users: Vec<User>;
-
-    match serde_json::from_str(&input) {
-        Ok(converted_input) => {
-            all_users = converted_input;
-        }
-        Err(_) => {
-            return HttpResponse::BadRequest().finish()
-        }
-    }
+#[post("/users")]
+pub async fn post_users(info: web::Json<Vec<User>>, data: web::Data<models::AppState>) -> impl Responder {
 
     let mut docs = Vec::new();
 
-    for user in all_users {
-        docs.push(doc! { "id": user.id, "email": user.email })
+    for user in info.0 {
+        docs.push(user_to_document(user))
     }
 
     match data.data.insert_many(docs, None).await {
@@ -127,6 +91,7 @@ pub async fn post_users(mut payload: web::Payload, data: web::Data<models::AppSt
     }
 }
 
+#[delete("/users/{id}")]
 pub async fn delete_user_by_id(req: HttpRequest, data: web::Data<models::AppState>) -> impl Responder {
 
     let id: i32 = match req.match_info().get("id") {
@@ -148,5 +113,4 @@ pub async fn delete_user_by_id(req: HttpRequest, data: web::Data<models::AppStat
         Ok(result) => { HttpResponse::Ok().json(doc! { "Number of entries deleted:": result.deleted_count.to_string() }) }
         Err(_) => { HttpResponse::NotFound().finish() }
     };
-
 }

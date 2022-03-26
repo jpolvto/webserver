@@ -1,4 +1,4 @@
-use bson::{Document};
+use bson::{doc, Document};
 use std::string::String;
 use mongodb::Collection;
 use serde::{Serialize, Deserialize};
@@ -28,5 +28,12 @@ pub fn user_from_document(document: bson::Document) -> Option<User> {
             }
         },
         _ => None,
+    }
+}
+
+pub fn user_to_document (user: User) -> bson::Document {
+    doc! {
+        "id": user.id,
+        "email": user.email,
     }
 }
