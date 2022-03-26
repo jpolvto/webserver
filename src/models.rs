@@ -3,6 +3,7 @@ use std::string::String;
 use mongodb::{Database};
 use serde::{Serialize, Deserialize};
 
+#[derive(Debug)]
 pub struct AppState {
     pub db: Database,
 }
