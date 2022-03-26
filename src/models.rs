@@ -1,10 +1,10 @@
 use bson::{doc, Document};
 use std::string::String;
-use mongodb::Collection;
+use mongodb::{Database};
 use serde::{Serialize, Deserialize};
 
 pub struct AppState {
-    pub data: Collection<Document>,
+    pub db: Database,
 }
 
 #[derive(Debug, Serialize, Deserialize)]

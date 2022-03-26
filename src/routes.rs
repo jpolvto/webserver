@@ -1,13 +1,16 @@
 use actix_web::{HttpRequest, HttpResponse, Responder, web, get, delete, post};
 use bson::{Bson, doc, Document};
 use futures_util::StreamExt;
+use mongodb::Collection;
 use crate::models;
 use crate::models::{User};
 
 #[get("/users")]
 pub async fn all_users(data: web::Data<models::AppState>) -> impl Responder {
 
-    let mut cursor= match data.data.find(doc! {}, None).await {
+    let user_collection: Collection<Document> = data.db.collection("users");
+
+    let mut cursor= match user_collection.find(doc! {}, None).await {
         Ok(result) => result,
         _ => {return HttpResponse::NotFound().finish();}
     };
@@ -49,8 +52,9 @@ pub async fn get_users_by_id(req: HttpRequest, data: web::Data<models::AppState>
         }
     };
 
+    let user_collection: Collection<Document> = data.db.collection("users");
 
-    let mut cursor= match data.data.find(doc! { "id":  id }, None).await {
+    let mut cursor= match user_collection.find(doc! { "id":  id }, None).await {
         Ok(result) => result,
         _ => {return HttpResponse::NotFound().finish();}
     };
@@ -84,7 +88,9 @@ pub async fn post_users(info: web::Json<Vec<User>>, data: web::Data<models::AppS
         docs.push(doc)
     }
 
-    match data.data.insert_many(docs, None).await {
+    let user_collection: Collection<Document> = data.db.collection("users");
+
+    match user_collection.insert_many(docs, None).await {
         Ok(result) => {
             let inserts: Vec<Bson> = result.inserted_ids.into_values().collect();
             HttpResponse::Ok().json(doc! { "Entries inserted:": inserts }) }
@@ -110,7 +116,9 @@ pub async fn delete_user_by_id(req: HttpRequest, data: web::Data<models::AppStat
         }
     };
 
-    return match data.data.delete_many(doc! { "id":  id }, None).await {
+    let user_collection: Collection<Document> = data.db.collection("users");
+
+    return match user_collection.delete_many(doc! { "id":  id }, None).await {
         Ok(result) => { HttpResponse::Ok().json(doc! { "Number of entries deleted:": result.deleted_count.to_string() }) }
         _ => { HttpResponse::NotFound().finish() }
     };
