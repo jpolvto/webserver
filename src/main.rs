@@ -1,11 +1,13 @@
 extern crate alloc;
 extern crate env_logger;
+extern crate core;
 
 mod routes;
 mod models;
 
 use std::env;
 use actix_web::{App, HttpServer, middleware, web};
+use actix_web::middleware::Logger;
 use mongodb::{Client};
 use mongodb::options::ClientOptions;
 use dotenv;
@@ -26,9 +28,11 @@ async fn main() -> tokio::io::Result<()> {
     });
 
     HttpServer::new(move || {
+        let logger = Logger::default();
         App::new()
             .app_data(data.clone()) // <- register the created data
             .wrap(middleware::Compress::default())
+            .wrap(logger)
             .service(all_users)
             .service(post_users)
             .service(get_users_by_id)

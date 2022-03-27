@@ -189,6 +189,7 @@ dependencies = [
  "actix-rt",
  "actix-web",
  "bson",
+ "derive_more",
  "dotenv",
  "env_logger",
  "futures-util",
