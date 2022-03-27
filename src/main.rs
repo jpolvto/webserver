@@ -27,12 +27,14 @@ async fn main() -> tokio::io::Result<()> {
         db,
     });
 
+    env_logger::init();
+
     HttpServer::new(move || {
-        let logger = Logger::default();
         App::new()
             .app_data(data.clone()) // <- register the created data
             .wrap(middleware::Compress::default())
-            .wrap(logger)
+            .wrap(Logger::default())
+            .wrap(Logger::new("%a %{User-Agent}i"))
             .service(all_users)
             .service(post_users)
             .service(get_users_by_id)
