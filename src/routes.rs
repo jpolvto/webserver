@@ -4,41 +4,47 @@ use futures_util::StreamExt;
 use mongodb::Collection;
 use crate::models;
 use crate::models::{User};
-use actix_web::{get, post, delete, error::ResponseError, web::Json, HttpResponse, http::{header::ContentType, StatusCode}, web, HttpRequest};
-use derive_more::{Display};
+use actix_web::{get, post, delete, web::Json, HttpResponse, http::{header::ContentType, StatusCode}, web, HttpRequest, error};
+use derive_more::{Display, Error};
 
-#[derive(Debug, Display)]
+#[derive(Debug, Display, Error)]
 pub enum AppError {
+    #[display(fmt = "internal error")]
+    InternalError,
+
+    #[display(fmt = "bad request")]
+    BadClientData,
+
+    #[display(fmt = "not found")]
     NotFound,
-    DbError,
-    BadRequest
 }
 
-impl ResponseError for AppError {
-    fn status_code(&self) -> StatusCode {
-        match self {
-            AppError::NotFound => StatusCode::NOT_FOUND,
-            AppError::DbError => StatusCode::INTERNAL_SERVER_ERROR,
-            AppError::BadRequest => StatusCode::BAD_REQUEST
-        }
-    }
-
+impl error::ResponseError for AppError {
     fn error_response(&self) -> HttpResponse {
         HttpResponse::build(self.status_code())
             .insert_header(ContentType::json())
-            .body(self.to_string())
+            .body(format!("{{ \"status_code\":{}, \"message\": \"{}\" }}", self.status_code().as_u16(), self.to_string()))
+    }
+
+    fn status_code(&self) -> StatusCode {
+        match *self {
+            AppError::InternalError => StatusCode::INTERNAL_SERVER_ERROR,
+            AppError::BadClientData => StatusCode::BAD_REQUEST,
+            AppError::NotFound => StatusCode::NOT_FOUND,
+        }
     }
 }
 
+
 impl From<mongodb::error::Error> for AppError {
     fn from(_error: mongodb::error::Error) -> Self {
-         return AppError::DbError;
+         return AppError::InternalError;
     }
 }
 
 impl From<ParseIntError> for AppError {
     fn from(_error: ParseIntError) -> Self {
-        return AppError::BadRequest;
+        return AppError::BadClientData;
     }
 }
 
@@ -82,7 +88,7 @@ pub async fn get_users_by_id(req: HttpRequest, data: web::Data<models::AppState>
             id = id_cast.parse::<i32>()?
         }
         None => {
-            return Err(AppError::BadRequest)
+            return Err(AppError::BadClientData)
         }
     };
 
@@ -138,7 +144,7 @@ pub async fn delete_user_by_id(req: HttpRequest, data: web::Data<models::AppStat
             id = id_cast.parse::<i32>()?
         }
         None => {
-            return Err(AppError::BadRequest)
+            return Err(AppError::BadClientData)
         }
     };
 
