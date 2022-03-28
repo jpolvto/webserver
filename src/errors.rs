@@ -1,6 +1,7 @@
 use std::num::ParseIntError;
 use actix_web::{error, HttpResponse, http::header::ContentType, http::StatusCode};
 use derive_more::{Display, Error};
+use serde::{Serialize, Deserialize};
 
 #[derive(Debug, Display, Error)]
 pub enum AppError {
@@ -14,11 +15,20 @@ pub enum AppError {
     NotFound,
 }
 
+#[derive(Serialize, Deserialize, Debug)]
+struct ErrorResponse {
+    code: u16,
+    message: String,
+}
+
 impl error::ResponseError for AppError {
     fn error_response(&self) -> HttpResponse {
-        HttpResponse::build(self.status_code())
-            .insert_header(ContentType::json())
-            .body(format!("{{ \"status_code\":{}, \"message\": \"{}\" }}", self.status_code().as_u16(), self.to_string()))
+        let error_code = self.status_code();
+        let error_response = ErrorResponse {
+            code: error_code.as_u16(),
+            message: self.to_string(),
+        };
+        HttpResponse::build(error_code).json(error_response)
     }
 
     fn status_code(&self) -> StatusCode {
