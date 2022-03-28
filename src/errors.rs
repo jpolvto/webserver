@@ -25,7 +25,8 @@ struct ErrorResponse {
 impl error::ResponseError for AppError {
     fn error_response(&self) -> HttpResponse {
         let error_code = self.status_code();
-        HttpResponse::build(error_code).json(doc!{ "code": u32::from(error_code.as_u16()), "message": self.to_string() })
+        let error_number = error_code.as_u16() as i32;
+        HttpResponse::build(error_code).json(doc!{ "code": error_number, "message": self.to_string() })
     }
 
     fn status_code(&self) -> StatusCode {

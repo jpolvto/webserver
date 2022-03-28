@@ -108,7 +108,7 @@ pub async fn delete_user_by_id(req: HttpRequest, data: web::Data<models::AppStat
     };
 
     let user_collection: Collection<Document> = data.db.collection("users");
-    let result =  user_collection.delete_many(doc! { "id":  id }, None).await?.deleted_count.to_string();
+    let result: i64 =  user_collection.delete_many(doc! { "id":  id }, None).await?.deleted_count as i64;
 
     Ok(Json(doc!{ "number_of_entries_deleted:": result }))
 
