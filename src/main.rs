@@ -4,6 +4,7 @@ extern crate core;
 
 mod routes;
 mod models;
+mod errors;
 
 use std::env;
 use actix_web::{App, HttpServer, middleware, web};
