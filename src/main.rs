@@ -19,9 +19,11 @@ use crate::routes::{all_users, delete_user_by_id, get_users_by_id, post_users};
 async fn main() -> tokio::io::Result<()> {
     dotenv::dotenv().ok();
 
-    let host_name = format!("mongodb+srv://{}:{}@cluster0.17s4f.mongodb.net/actix-webserver?retryWrites=true&w=majority", env::var("USER").unwrap(), env::var("PASSWORD").unwrap());
-    let options = ClientOptions::parse(&host_name).await.unwrap();
-    let client = Client::with_options(options).unwrap();
+    let host_name = format!("mongodb+srv://{}:{}@cluster0.17s4f.mongodb.net/actix-webserver?retryWrites=true&w=majority",
+                            env::var("USER").expect("No user found"),
+                            env::var("PASSWORD").expect("No password found"));
+    let options = ClientOptions::parse(&host_name).await.expect("Error parsing client options");
+    let client = Client::with_options(options).expect("Error creating client");
     let db = client.database("actix-webserver");
 
     let data = web::Data::new(AppState {

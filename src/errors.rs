@@ -1,5 +1,6 @@
 use std::num::ParseIntError;
-use actix_web::{error, HttpResponse, http::header::ContentType, http::StatusCode};
+use actix_web::{error, HttpResponse, http::StatusCode};
+use bson::doc;
 use derive_more::{Display, Error};
 use serde::{Serialize, Deserialize};
 
@@ -24,11 +25,7 @@ struct ErrorResponse {
 impl error::ResponseError for AppError {
     fn error_response(&self) -> HttpResponse {
         let error_code = self.status_code();
-        let error_response = ErrorResponse {
-            code: error_code.as_u16(),
-            message: self.to_string(),
-        };
-        HttpResponse::build(error_code).json(error_response)
+        HttpResponse::build(error_code).json(doc!{ "code": u32::from(error_code.as_u16()), "message": self.to_string() })
     }
 
     fn status_code(&self) -> StatusCode {
