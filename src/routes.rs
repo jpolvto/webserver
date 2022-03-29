@@ -1,9 +1,10 @@
-use bson::{Bson, doc, Document};
+use bson::{doc, Document};
 use futures_util::StreamExt;
 use mongodb::Collection;
 use crate::models;
 use crate::models::User;
 use actix_web::{get, post, delete, web::Json, web, HttpRequest};
+use mongodb::results::{DeleteResult, InsertManyResult};
 use crate::errors::AppError;
 
 
@@ -78,7 +79,7 @@ pub async fn get_users_by_id(req: HttpRequest, data: web::Data<models::AppState>
 }
 
 #[post("/users")]
-pub async fn post_users(info: web::Json<Vec<User>>, data: web::Data<models::AppState>) -> Result<Json<Document>, AppError> {
+pub async fn post_users(info: web::Json<Vec<User>>, data: web::Data<models::AppState>) -> Result<Json<InsertManyResult>, AppError> {
 
     let mut docs: Vec<Document> = Vec::new();
 
@@ -88,13 +89,13 @@ pub async fn post_users(info: web::Json<Vec<User>>, data: web::Data<models::AppS
     }
 
     let user_collection: Collection<Document> = data.db.collection("users");
-    let result:Vec<Bson> =  user_collection.insert_many(docs, None).await?.inserted_ids.into_values().collect();
+    let result =  user_collection.insert_many(docs, None).await?;
 
-    Ok(Json(doc!{ "entries_inserted": result }))
+    Ok(Json(result))
 }
 
 #[delete("/users/{id}")]
-pub async fn delete_user_by_id(req: HttpRequest, data: web::Data<models::AppState>) -> Result<Json<Document>, AppError> {
+pub async fn delete_user_by_id(req: HttpRequest, data: web::Data<models::AppState>) -> Result<Json<DeleteResult>, AppError> {
 
     let id: i32;
 
@@ -108,8 +109,8 @@ pub async fn delete_user_by_id(req: HttpRequest, data: web::Data<models::AppStat
     };
 
     let user_collection: Collection<Document> = data.db.collection("users");
-    let result: i64 =  user_collection.delete_many(doc! { "id":  id }, None).await?.deleted_count as i64;
+    let result =  user_collection.delete_many(doc! { "id":  id }, None).await?;
 
-    Ok(Json(doc!{ "number_of_entries_deleted:": result }))
+    Ok(Json(result))
 
 }
