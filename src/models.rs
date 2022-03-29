@@ -8,6 +8,11 @@ pub struct AppState {
     pub db: Database,
 }
 
+#[derive(Deserialize)]
+pub struct Info {
+    pub id: i32
+}
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct User {
     pub id: i32,

@@ -3,7 +3,8 @@ use futures_util::StreamExt;
 use mongodb::{Collection, Cursor};
 use crate::models;
 use crate::models::User;
-use actix_web::{post, get, delete, web::Json, web, HttpRequest};
+use crate::models::Info;
+use actix_web::{post, get, delete, web::Json, web};
 use mongodb::results::{DeleteResult, InsertManyResult};
 use crate::errors::AppError;
 
@@ -46,42 +47,20 @@ pub async fn all_users(data: web::Data<models::AppState>) -> Result<Json<Vec<Use
 }
 
 #[get("/users/{id}")]
-pub async fn get_users_by_id(req: HttpRequest, data: web::Data<models::AppState>) -> Result<Json<Vec<User>>, AppError> {
-
-    let id: i32;
-
-    match req.match_info().get("id") {
-        Some(id_cast) => {
-            id = id_cast.parse::<i32>()?
-        }
-        None => {
-            return Err(AppError::BadClientData)
-        }
-    };
+pub async fn get_users_by_id(info: web::Path<Info>, data: web::Data<models::AppState>) -> Result<Json<Vec<User>>, AppError> {
 
     let user_collection: Collection<Document> = data.db.collection("users");
-    let cursor= user_collection.find(doc! { "id": id }, None).await?;
+    let cursor= user_collection.find(doc! { "id": info.id }, None).await?;
     let results = get_users_from_cursor(cursor).await?;
 
     Ok(Json(results))
 }
 
 #[delete("/users/{id}")]
-pub async fn delete_user_by_id(req: HttpRequest, data: web::Data<models::AppState>) -> Result<Json<DeleteResult>, AppError> {
-
-    let id: i32;
-
-    match req.match_info().get("id") {
-        Some(id_cast) => {
-            id = id_cast.parse::<i32>()?
-        }
-        None => {
-            return Err(AppError::BadClientData)
-        }
-    };
+pub async fn delete_user_by_id(info: web::Path<Info>, data: web::Data<models::AppState>) -> Result<Json<DeleteResult>, AppError> {
 
     let user_collection: Collection<Document> = data.db.collection("users");
-    let result =  user_collection.delete_many(doc! { "id":  id }, None).await?;
+    let result =  user_collection.delete_many(doc! { "id":  info.id }, None).await?;
 
     Ok(Json(result))
 
