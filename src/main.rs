@@ -28,24 +28,23 @@ async fn main() -> tokio::io::Result<()> {
         // only accept text/plain content type
         .content_type(|mime| mime == mime::TEXT_PLAIN)
         // use custom error handler
-        .error_handler(|err, req| {
-            let error_code = err.status_code();
-            let error_response = ErrorResponse {
-                code: error_code.as_u16(),
-                message: err.to_string(),
-            };
-            error::InternalError::from_response(err, HttpResponse::build(error_code).json(error_response)).into()
+        .error_handler(|err, _req| {
+
+            let status_code = err.status_code();
+            let response = ErrorResponse::from(&err);
+            error::InternalError::from_response(err, HttpResponse::build(status_code)
+                .json(response)).into()
+
         });
 
     let path_cfg = PathConfig::default()
-        .error_handler(|err, req| {
-            let error_code = err.status_code();
+        .error_handler(|err, _req| {
 
-            let error_response = ErrorResponse {
-                code: error_code.as_u16(),
-                message: err.to_string(),
-            };
-            error::InternalError::from_response(err, HttpResponse::build(error_code).json(error_response)).into()
+            let status_code = err.status_code();
+            let response = ErrorResponse::from(&err);
+            error::InternalError::from_response(err, HttpResponse::build(status_code)
+                .json(response)).into()
+
         });
 
     let host_name = format!("mongodb+srv://{}:{}@cluster0.17s4f.mongodb.net/actix-webserver?retryWrites=true&w=majority",
