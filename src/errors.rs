@@ -7,6 +7,7 @@ use serde::{Serialize, Deserialize};
 pub enum AppError {
     InternalError,
     NotFound,
+    BadRequest
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -38,6 +39,7 @@ impl fmt::Display for AppError {
         match *self {
             AppError::InternalError => write!(f, "internal error"),
             AppError::NotFound => write!(f, "not found"),
+            AppError::BadRequest => write!(f, "bad request"),
         }
     }
 }
@@ -47,6 +49,7 @@ impl error::ResponseError for AppError {
         match *self {
             AppError::InternalError => StatusCode::INTERNAL_SERVER_ERROR,
             AppError::NotFound => StatusCode::NOT_FOUND,
+            AppError::BadRequest => StatusCode::BAD_REQUEST,
         }
     }
 
@@ -63,5 +66,17 @@ impl error::ResponseError for AppError {
 impl From<mongodb::error::Error> for AppError {
     fn from(_error: mongodb::error::Error) -> Self {
         return AppError::InternalError;
+    }
+}
+
+impl From<bson::ser::Error> for AppError {
+    fn from(_error: bson::ser::Error) -> Self {
+        return AppError::BadRequest;
+    }
+}
+
+impl From<bson::de::Error> for AppError {
+    fn from(_error: bson::de::Error) -> Self {
+        return AppError::BadRequest;
     }
 }

@@ -15,7 +15,7 @@ use mongodb::options::ClientOptions;
 use dotenv;
 use crate::errors::{ErrorResponse};
 use crate::models::AppState;
-use crate::routes::{all_users, delete_user_by_id, get_users_by_id, post_users};
+use crate::routes::{all_users, delete_users_by_id, get_users_by_id, post_users, put_users_by_id};
 
 #[actix_web::main(flavor = "multi_thread", worker_threads = 10)]
 async fn main() -> tokio::io::Result<()> {
@@ -72,7 +72,8 @@ async fn main() -> tokio::io::Result<()> {
             .service(all_users)
             .service(post_users)
             .service(get_users_by_id)
-            .service(delete_user_by_id)
+            .service(delete_users_by_id)
+            .service(put_users_by_id)
     })
         .bind("127.0.0.1:8080")?
         .run()
