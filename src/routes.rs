@@ -14,7 +14,7 @@ pub async fn get_users_from_cursor (mut cursor: Cursor<Document>) -> Result<Vec<
     while let Some(result) = cursor.next().await {
         match result {
             Ok(doc) => {
-                let deserialized_user: User = bson::from_document(doc)?;
+                let deserialized_user: User = bson::from_document(doc)?; // Deserialize
                 results.push(deserialized_user)
             }
             Err(err) => {
