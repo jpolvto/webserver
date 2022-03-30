@@ -1,9 +1,8 @@
 use std::fmt;
 use actix_web::{error, HttpResponse, http::StatusCode};
-use derive_more::{Error};
 use serde::{Serialize, Deserialize};
 
-#[derive(Debug, Error)]
+#[derive(Debug)]
 pub enum AppError {
     InternalError,
     BadClientData,
@@ -11,9 +10,9 @@ pub enum AppError {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-struct ErrorResponse {
-    code: u16,
-    message: String,
+pub struct ErrorResponse {
+    pub code: u16,
+    pub message: String,
 }
 
 impl fmt::Display for AppError {

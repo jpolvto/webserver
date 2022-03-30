@@ -82,5 +82,3 @@ pub async fn post_users(info: web::Json<Vec<User>>, data: web::Data<models::AppS
 
     Ok(Json(result))
 }
-
-
