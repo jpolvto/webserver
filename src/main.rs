@@ -9,7 +9,7 @@ mod errors;
 use std::env;
 use actix_web::{App, error, HttpResponse, HttpServer, middleware, ResponseError, web};
 use actix_web::middleware::Logger;
-use actix_web::web::{PathConfig, QueryConfig};
+use actix_web::web::{QueryConfig};
 use mongodb::{Client};
 use mongodb::options::ClientOptions;
 use dotenv;
@@ -21,6 +21,10 @@ use crate::routes::{delete_users, get_users, post_users, put_users};
 async fn main() -> tokio::io::Result<()> {
     dotenv::dotenv().ok();
 
+    let database_name = env::var("DATABASE_NAME").unwrap();
+    let password = env::var("PASSWORD").unwrap();
+    let user = env::var("USER").unwrap();
+
     // custom `Json` extractor configuration
     let json_cfg = web::JsonConfig::default()
         // limit request payload size
@@ -28,16 +32,6 @@ async fn main() -> tokio::io::Result<()> {
         // only accept text/plain content type
         .content_type(|mime| mime == mime::TEXT_PLAIN)
         // use custom error handler
-        .error_handler(|err, _req| {
-
-            let status_code = err.status_code();
-            let response = ErrorResponse::from(&err);
-            error::InternalError::from_response(err, HttpResponse::build(status_code)
-                .json(response)).into()
-
-        });
-
-    let path_cfg = PathConfig::default()
         .error_handler(|err, _req| {
 
             let status_code = err.status_code();
@@ -57,12 +51,16 @@ async fn main() -> tokio::io::Result<()> {
 
         });
 
-    let host_name = format!("mongodb+srv://{}:{}@cluster0.17s4f.mongodb.net/actix-webserver?retryWrites=true&w=majority",
-                            env::var("USER").expect("No user found"),
-                            env::var("PASSWORD").expect("No password found"));
-    let options = ClientOptions::parse(&host_name).await.expect("Error parsing client options");
-    let client = Client::with_options(options).expect("Error creating client");
-    let db = client.database("actix-webserver");
+
+    let host_name = format!("mongodb+srv://{}:{}@cluster0.17s4f.mongodb.net/{}?retryWrites=true&w=majority",
+                            &user,
+                            &password,
+                            &database_name,
+    );
+
+    let options = ClientOptions::parse(&host_name).await.unwrap();
+    let client = Client::with_options(options).unwrap();
+    let db = client.database(&database_name);
 
     let data = web::Data::new(AppState {
         db,
@@ -75,7 +73,6 @@ async fn main() -> tokio::io::Result<()> {
         App::new()
             .app_data(data.clone())
             .app_data(json_cfg.clone())
-            .app_data(path_cfg.clone())
             .app_data(query_cfg.clone())
             .wrap(middleware::Compress::default())
             .wrap(Logger::default())

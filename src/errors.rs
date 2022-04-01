@@ -1,6 +1,6 @@
 use std::fmt;
 use actix_web::{HttpResponse, ResponseError};
-use actix_web::error::{JsonPayloadError, PathError, QueryPayloadError};
+use actix_web::error::{JsonPayloadError, QueryPayloadError};
 use serde::{Serialize, Deserialize};
 
 #[derive(Debug)]
@@ -18,15 +18,6 @@ pub struct ErrorResponse {
 
 impl From<&JsonPayloadError> for ErrorResponse {
     fn from(error: &JsonPayloadError) -> Self {
-        return ErrorResponse {
-            code: error.status_code().as_u16(),
-            message: error.to_string(),
-        };
-    }
-}
-
-impl From<&PathError> for ErrorResponse {
-    fn from(error: &PathError) -> Self {
         return ErrorResponse {
             code: error.status_code().as_u16(),
             message: error.to_string(),
