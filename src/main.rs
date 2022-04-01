@@ -52,10 +52,9 @@ async fn main() -> tokio::io::Result<()> {
         });
 
 
-    let host_name = format!("mongodb+srv://{}:{}@cluster0.17s4f.mongodb.net/{}?retryWrites=true&w=majority",
+    let host_name = format!("mongodb+srv://{}:{}@cluster0.17s4f.mongodb.net/retryWrites=true&w=majority",
                             &user,
                             &password,
-                            &database_name,
     );
 
     let options = ClientOptions::parse(&host_name).await.unwrap();

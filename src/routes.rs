@@ -13,7 +13,7 @@ pub async fn get_users_from_cursor (mut cursor: Cursor<Document>) -> Result<Vec<
     while let Some(result) = cursor.next().await {
         match result {
             Ok(doc) => {
-                let deserialized_user: User = bson::from_document(doc)?; // Deserialize
+                let deserialized_user: User = bson::from_document(doc)?;
                 results.push(deserialized_user)
             }
             Err(err) => {
@@ -87,7 +87,7 @@ pub async fn post_users(input: web::Json<Vec<User>>, data: web::Data<models::App
 
     let mut docs: Vec<Document> = Vec::new();
 
-    for user in input.0 {
+    for user in input.into_inner() {
         let serialized_user = bson::to_bson(&user)?;  // Serialize
         if let bson::Bson::Document(document) = serialized_user {
             docs.push(document)
