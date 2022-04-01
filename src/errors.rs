@@ -1,13 +1,13 @@
 use std::fmt;
-use actix_web::{error, HttpResponse, http::StatusCode, ResponseError};
-use actix_web::error::{JsonPayloadError, PathError};
+use actix_web::{HttpResponse, ResponseError};
+use actix_web::error::{JsonPayloadError, PathError, QueryPayloadError};
 use serde::{Serialize, Deserialize};
 
 #[derive(Debug)]
 pub enum AppError {
-    InternalError,
+    InternalError(String),
+    BadRequest(String),
     NotFound,
-    BadRequest
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -34,49 +34,63 @@ impl From<&PathError> for ErrorResponse {
     }
 }
 
+impl From<&QueryPayloadError> for ErrorResponse {
+    fn from(error: &QueryPayloadError) -> Self {
+        return ErrorResponse {
+            code: error.status_code().as_u16(),
+            message: error.to_string(),
+        };
+    }
+}
+
 impl fmt::Display for AppError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
-            AppError::InternalError => write!(f, "internal error"),
+            AppError::InternalError(ref cause) => write!(f, "internal error: {}", cause),
+            AppError::BadRequest(ref cause) => write!(f, "bad request: {}", cause),
             AppError::NotFound => write!(f, "not found"),
-            AppError::BadRequest => write!(f, "bad request"),
         }
     }
 }
 
-impl error::ResponseError for AppError {
-    fn status_code(&self) -> StatusCode {
-        match *self {
-            AppError::InternalError => StatusCode::INTERNAL_SERVER_ERROR,
-            AppError::NotFound => StatusCode::NOT_FOUND,
-            AppError::BadRequest => StatusCode::BAD_REQUEST,
-        }
-    }
-
+impl ResponseError for AppError {
     fn error_response(&self) -> HttpResponse {
-        let error_code = self.status_code();
-        let error_response = ErrorResponse {
-            code: error_code.as_u16(),
-            message: self.to_string(),
-        };
-        HttpResponse::build(error_code).json(error_response)
+        match self {
+            AppError::BadRequest(err) => {
+                let error_code = self.status_code();
+                let error_response = ErrorResponse {
+                    code: error_code.as_u16(),
+                    message: err.to_string(),
+                };
+                HttpResponse::NotFound().json(error_response)
+            }
+            AppError::InternalError(err) => {
+                let error_code = self.status_code();
+                let error_response = ErrorResponse {
+                    code: error_code.as_u16(),
+                    message: err.to_string(),
+                };
+                HttpResponse::InternalServerError().json(error_response)
+            }
+            AppError::NotFound => HttpResponse::NotFound().finish(),
+        }
     }
 }
 
 impl From<mongodb::error::Error> for AppError {
-    fn from(_error: mongodb::error::Error) -> Self {
-        return AppError::InternalError;
+    fn from(error: mongodb::error::Error) -> Self {
+        return AppError::InternalError(error.to_string());
     }
 }
 
 impl From<bson::ser::Error> for AppError {
-    fn from(_error: bson::ser::Error) -> Self {
-        return AppError::BadRequest;
+    fn from(error: bson::ser::Error) -> Self {
+        return AppError::BadRequest(error.to_string());
     }
 }
 
 impl From<bson::de::Error> for AppError {
-    fn from(_error: bson::de::Error) -> Self {
-        return AppError::BadRequest;
+    fn from(error: bson::de::Error) -> Self {
+        return AppError::BadRequest(error.to_string());
     }
 }

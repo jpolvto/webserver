@@ -3,7 +3,6 @@ use futures_util::StreamExt;
 use mongodb::{Collection, Cursor};
 use crate::models;
 use crate::models::User;
-use crate::models::Info;
 use actix_web::{post, get, put, delete, web::Json, web};
 use mongodb::results::{DeleteResult, InsertManyResult, UpdateResult};
 use crate::errors::AppError;
@@ -32,43 +31,52 @@ pub async fn get_users_from_cursor (mut cursor: Cursor<Document>) -> Result<Vec<
 }
 
 #[get("/users")]
-pub async fn all_users(data: web::Data<models::AppState>) -> Result<Json<Vec<User>>, AppError> {
+pub async fn get_users(info: web::Query<User>, data: web::Data<models::AppState>) -> Result<Json<Vec<User>>, AppError> {
+
+    let serialized_info = bson::to_bson(&info.into_inner())?;
+
+    let mut doc = Default::default();
+    if let bson::Bson::Document(document) = serialized_info {
+        doc = document
+    }
 
     let user_collection: Collection<Document> = data.db.collection("users");
-    let cursor= user_collection.find(doc! { }, None).await?;
-    let results = get_users_from_cursor(cursor).await?;
-
-    Ok(Json(results))
-
-}
-
-#[get("/users/{id}")]
-pub async fn get_users_by_id(info: web::Path<Info>, data: web::Data<models::AppState>) -> Result<Json<Vec<User>>, AppError> {
-
-    let user_collection: Collection<Document> = data.db.collection("users");
-    let cursor= user_collection.find(doc! { "id": info.id }, None).await?;
+    let cursor= user_collection.find(doc, None).await?;
     let results = get_users_from_cursor(cursor).await?;
 
     Ok(Json(results))
 }
 
-#[delete("/users/{id}")]
-pub async fn delete_users_by_id(info: web::Path<Info>, data: web::Data<models::AppState>) -> Result<Json<DeleteResult>, AppError> {
+#[delete("/users")]
+pub async fn delete_users(info: web::Query<User>, data: web::Data<models::AppState>) -> Result<Json<DeleteResult>, AppError> {
+
+    let serialized_info = bson::to_bson(&info.into_inner())?;
+
+    let mut doc = Default::default();
+    if let bson::Bson::Document(document) = serialized_info {
+        doc = document
+    }
 
     let user_collection: Collection<Document> = data.db.collection("users");
-    let result =  user_collection.delete_many(doc! { "id":  info.id }, None).await?;
+    let result =  user_collection.delete_many(doc, None).await?;
 
     Ok(Json(result))
 
 }
 
-#[put("/users/{id}")]
-pub async fn put_users_by_id(input: web::Json<User>, info: web::Path<Info>, data: web::Data<models::AppState>) -> Result<Json<UpdateResult>, AppError> {
+#[put("/users")]
+pub async fn put_users(input: web::Json<User>, info: web::Query<User>, data: web::Data<models::AppState>) -> Result<Json<UpdateResult>, AppError> {
 
-    let user = input.into_inner();
-    let serialized_person = bson::to_bson(&user)?;
+    let serialized_user = bson::to_bson(&input.into_inner())?;
+    let serialized_info = bson::to_bson(&info.into_inner())?;
+
+    let mut doc = Default::default();   
+    if let bson::Bson::Document(document) = serialized_info {
+        doc = document
+    }
+
     let user_collection: Collection<Document> = data.db.collection("users");
-    let result =  user_collection.update_many(doc! { "id":  info.id }, doc!{ "$set": serialized_person }, None).await?;
+    let result =  user_collection.update_many(doc, doc!{ "$set": serialized_user }, None).await?;
 
     Ok(Json(result))
 
@@ -81,7 +89,6 @@ pub async fn post_users(input: web::Json<Vec<User>>, data: web::Data<models::App
 
     for user in input.0 {
         let serialized_user = bson::to_bson(&user)?;  // Serialize
-
         if let bson::Bson::Document(document) = serialized_user {
             docs.push(document)
         }

@@ -9,13 +9,13 @@ mod errors;
 use std::env;
 use actix_web::{App, error, HttpResponse, HttpServer, middleware, ResponseError, web};
 use actix_web::middleware::Logger;
-use actix_web::web::{PathConfig};
+use actix_web::web::{PathConfig, QueryConfig};
 use mongodb::{Client};
 use mongodb::options::ClientOptions;
 use dotenv;
 use crate::errors::{ErrorResponse};
 use crate::models::AppState;
-use crate::routes::{all_users, delete_users_by_id, get_users_by_id, post_users, put_users_by_id};
+use crate::routes::{delete_users, get_users, post_users, put_users};
 
 #[actix_web::main(flavor = "multi_thread", worker_threads = 10)]
 async fn main() -> tokio::io::Result<()> {
@@ -47,6 +47,16 @@ async fn main() -> tokio::io::Result<()> {
 
         });
 
+    let query_cfg = QueryConfig::default()
+        .error_handler(|err, _req| {
+
+            let status_code = err.status_code();
+            let response = ErrorResponse::from(&err);
+            error::InternalError::from_response(err, HttpResponse::build(status_code)
+                .json(response)).into()
+
+        });
+
     let host_name = format!("mongodb+srv://{}:{}@cluster0.17s4f.mongodb.net/actix-webserver?retryWrites=true&w=majority",
                             env::var("USER").expect("No user found"),
                             env::var("PASSWORD").expect("No password found"));
@@ -63,17 +73,17 @@ async fn main() -> tokio::io::Result<()> {
     HttpServer::new(move || {
 
         App::new()
-            .app_data(data.clone()) // <- register the created data
+            .app_data(data.clone())
             .app_data(json_cfg.clone())
             .app_data(path_cfg.clone())
+            .app_data(query_cfg.clone())
             .wrap(middleware::Compress::default())
             .wrap(Logger::default())
             .wrap(Logger::new("%a %{User-Agent}i"))
-            .service(all_users)
             .service(post_users)
-            .service(get_users_by_id)
-            .service(delete_users_by_id)
-            .service(put_users_by_id)
+            .service(get_users)
+            .service(delete_users)
+            .service(put_users)
     })
         .bind("127.0.0.1:8080")?
         .run()
