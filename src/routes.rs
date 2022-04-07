@@ -70,7 +70,7 @@ pub async fn put_users(input: web::Json<User>, info: web::Query<User>, data: web
     let serialized_user = bson::to_bson(&input.into_inner())?;
     let serialized_info = bson::to_bson(&info.into_inner())?;
 
-    let mut doc = Default::default();   
+    let mut doc = Default::default();
     if let bson::Bson::Document(document) = serialized_info {
         doc = document
     }
