@@ -7,13 +7,13 @@ mod models;
 mod errors;
 
 use std::env;
-use actix_web::{App, error, HttpResponse, HttpServer, middleware, ResponseError, web};
+use actix_web::{App, error, HttpServer, middleware, ResponseError, web};
 use actix_web::middleware::Logger;
 use actix_web::web::{QueryConfig};
+use errors::AppError;
 use mongodb::{Client};
 use mongodb::options::ClientOptions;
 use dotenv;
-use crate::errors::{ErrorResponse};
 use crate::models::AppState;
 use crate::routes::{delete_users, get_users, post_users, put_users};
 
@@ -34,21 +34,14 @@ async fn main() -> tokio::io::Result<()> {
         // use custom error handler
         .error_handler(|err, _req| {
 
-            let status_code = err.status_code();
-            let response = ErrorResponse::from(&err);
-            error::InternalError::from_response(err, HttpResponse::build(status_code)
-                .json(response)).into()
+            error::InternalError::from_response(err.to_string(), AppError::from(err).error_response()).into()
 
         });
 
     let query_cfg = QueryConfig::default()
         .error_handler(|err, _req| {
 
-            let status_code = err.status_code();
-            let response = ErrorResponse::from(&err);
-            error::InternalError::from_response(err, HttpResponse::build(status_code)
-                .json(response)).into()
-
+            error::InternalError::from_response(err.to_string(), AppError::from(err).error_response()).into()
         });
 
 

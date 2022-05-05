@@ -16,24 +16,6 @@ pub struct ErrorResponse {
     pub message: String,
 }
 
-impl From<&JsonPayloadError> for ErrorResponse {
-    fn from(error: &JsonPayloadError) -> Self {
-        return ErrorResponse {
-            code: error.status_code().as_u16(),
-            message: error.to_string(),
-        };
-    }
-}
-
-impl From<&QueryPayloadError> for ErrorResponse {
-    fn from(error: &QueryPayloadError) -> Self {
-        return ErrorResponse {
-            code: error.status_code().as_u16(),
-            message: error.to_string(),
-        };
-    }
-}
-
 impl fmt::Display for AppError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
@@ -53,7 +35,7 @@ impl ResponseError for AppError {
                     code: error_code.as_u16(),
                     message: err.to_string(),
                 };
-                HttpResponse::NotFound().json(error_response)
+                HttpResponse::BadRequest().json(error_response)
             }
             AppError::InternalError(err) => {
                 let error_code = self.status_code();
@@ -82,6 +64,18 @@ impl From<bson::ser::Error> for AppError {
 
 impl From<bson::de::Error> for AppError {
     fn from(error: bson::de::Error) -> Self {
+        return AppError::BadRequest(error.to_string());
+    }
+}
+
+impl From<JsonPayloadError> for AppError {
+    fn from(error: JsonPayloadError) -> Self {
+        return AppError::BadRequest(error.to_string());
+    }
+}
+
+impl From<QueryPayloadError> for AppError {
+    fn from(error: QueryPayloadError) -> Self {
         return AppError::BadRequest(error.to_string());
     }
 }
