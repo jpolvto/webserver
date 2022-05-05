@@ -33,19 +33,21 @@ async fn main() -> tokio::io::Result<()> {
         .content_type(|mime| mime == mime::TEXT_PLAIN)
         // use custom error handler
         .error_handler(|err, _req| {
-
-            error::InternalError::from_response(err.to_string(), AppError::from(err).error_response()).into()
-
+            error::InternalError::from_response(
+                err.to_string(),
+                AppError::from(err).error_response()).into()
         });
 
     let query_cfg = QueryConfig::default()
         .error_handler(|err, _req| {
-
-            error::InternalError::from_response(err.to_string(), AppError::from(err).error_response()).into()
+            error::InternalError::from_response(
+                err.to_string(),
+                AppError::from(err).error_response()).into()
         });
 
 
-    let host_name = format!("mongodb+srv://{}:{}@cluster0.17s4f.mongodb.net/retryWrites=true&w=majority",
+    let host_name = format!(
+                            "mongodb+srv://{}:{}@cluster0.17s4f.mongodb.net/retryWrites=true&w=majority",
                             &user,
                             &password,
     );
