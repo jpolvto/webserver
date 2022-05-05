@@ -56,6 +56,18 @@ impl From<mongodb::error::Error> for AppError {
     }
 }
 
+impl From<JsonPayloadError> for AppError {
+    fn from(error: JsonPayloadError) -> Self {
+        return AppError::InternalError(error.to_string());
+    }
+}
+
+impl From<QueryPayloadError> for AppError {
+    fn from(error: QueryPayloadError) -> Self {
+        return AppError::InternalError(error.to_string());
+    }
+}
+
 impl From<bson::ser::Error> for AppError {
     fn from(error: bson::ser::Error) -> Self {
         return AppError::BadRequest(error.to_string());
@@ -64,18 +76,6 @@ impl From<bson::ser::Error> for AppError {
 
 impl From<bson::de::Error> for AppError {
     fn from(error: bson::de::Error) -> Self {
-        return AppError::BadRequest(error.to_string());
-    }
-}
-
-impl From<JsonPayloadError> for AppError {
-    fn from(error: JsonPayloadError) -> Self {
-        return AppError::BadRequest(error.to_string());
-    }
-}
-
-impl From<QueryPayloadError> for AppError {
-    fn from(error: QueryPayloadError) -> Self {
         return AppError::BadRequest(error.to_string());
     }
 }
