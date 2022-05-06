@@ -25,13 +25,13 @@ impl ResponseError for AppError {
         match self {
             AppError::BadRequest(err) => {
                 HttpResponse::BadRequest().json(json!({
-                    "code": 400,
+                    "code": self.status_code().as_u16(),
                     "message": err.to_string() 
                 }))
             }
             AppError::InternalError(err) => {
                 HttpResponse::InternalServerError().json(json!({
-                    "code": 500,
+                    "code": self.status_code().as_u16(),
                     "message": err.to_string() 
                 }))
             }
@@ -48,13 +48,13 @@ impl From<mongodb::error::Error> for AppError {
 
 impl From<JsonPayloadError> for AppError {
     fn from(error: JsonPayloadError) -> Self {
-        return AppError::BadRequest(error.to_string());
+        return AppError::InternalError(error.to_string());
     }
 }
 
 impl From<QueryPayloadError> for AppError {
     fn from(error: QueryPayloadError) -> Self {
-        return AppError::BadRequest(error.to_string());
+        return AppError::InternalError(error.to_string());
     }
 }
 
