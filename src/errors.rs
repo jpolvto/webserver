@@ -1,19 +1,13 @@
 use std::fmt;
 use actix_web::{HttpResponse, ResponseError};
 use actix_web::error::{JsonPayloadError, QueryPayloadError};
-use serde::{Serialize, Deserialize};
+use serde_json::json;
 
 #[derive(Debug)]
 pub enum AppError {
     InternalError(String),
     BadRequest(String),
     NotFound,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct ErrorResponse {
-    pub code: u16,
-    pub message: String,
 }
 
 impl fmt::Display for AppError {
@@ -30,20 +24,16 @@ impl ResponseError for AppError {
     fn error_response(&self) -> HttpResponse {
         match self {
             AppError::BadRequest(err) => {
-                let error_code = self.status_code();
-                let error_response = ErrorResponse {
-                    code: error_code.as_u16(),
-                    message: err.to_string(),
-                };
-                HttpResponse::BadRequest().json(error_response)
+                HttpResponse::BadRequest().json(json!({
+                    "code": 400,
+                    "message": err.to_string() 
+                }))
             }
             AppError::InternalError(err) => {
-                let error_code = self.status_code();
-                let error_response = ErrorResponse {
-                    code: error_code.as_u16(),
-                    message: err.to_string(),
-                };
-                HttpResponse::InternalServerError().json(error_response)
+                HttpResponse::InternalServerError().json(json!({
+                    "code": 500,
+                    "message": err.to_string() 
+                }))
             }
             AppError::NotFound => HttpResponse::NotFound().finish(),
         }
@@ -58,13 +48,13 @@ impl From<mongodb::error::Error> for AppError {
 
 impl From<JsonPayloadError> for AppError {
     fn from(error: JsonPayloadError) -> Self {
-        return AppError::InternalError(error.to_string());
+        return AppError::BadRequest(error.to_string());
     }
 }
 
 impl From<QueryPayloadError> for AppError {
     fn from(error: QueryPayloadError) -> Self {
-        return AppError::InternalError(error.to_string());
+        return AppError::BadRequest(error.to_string());
     }
 }
 
