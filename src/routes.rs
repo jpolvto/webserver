@@ -1,6 +1,5 @@
-use bson::{doc, Document};
-use futures_util::{StreamExt, TryStreamExt};
-use mongodb::{Collection, Cursor};
+use bson::{doc};
+use futures_util::{TryStreamExt};
 use crate::models;
 use crate::models::User;
 use actix_web::{post, get, put, delete, web::Json, web};
@@ -20,6 +19,10 @@ pub async fn get_users(info: web::Query<User>, data: web::Data<models::AppState>
     let user_collection = data.db.collection::<User>("users");
     let cursor = user_collection.find(doc, None).await?;
     let results = cursor.try_collect().await.unwrap_or_else(|_| vec![]);
+
+    if results.is_empty() {
+        return Err(AppError::NotFound);
+    }
 
     Ok(Json(results))
 }
