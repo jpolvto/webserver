@@ -1,10 +1,10 @@
 use std::string::String;
-use mongodb::{Database};
+use mongodb::{Collection};
 use serde::{Serialize, Deserialize};
 
 #[derive(Debug)]
 pub struct AppState {
-    pub db: Database,
+    pub col: Collection<User>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -14,5 +14,3 @@ pub struct User {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub email: Option<String>
 }
-
-

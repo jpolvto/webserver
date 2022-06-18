@@ -183,24 +183,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "actix-webserver"
-version = "0.1.0"
-dependencies = [
- "actix-rt",
- "actix-web",
- "bson",
- "derive_more",
- "dotenv",
- "env_logger",
- "futures-util",
- "mime",
- "mongodb",
- "serde",
- "serde_json",
- "tokio",
-]
-
-[[package]]
 name = "adler"
 version = "1.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1967,6 +1949,24 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "aabe153544e473b775453675851ecc86863d2a81d786d741f6b76778f2a48940"
 dependencies = [
  "webpki",
+]
+
+[[package]]
+name = "webserver"
+version = "0.1.0"
+dependencies = [
+ "actix-rt",
+ "actix-web",
+ "bson",
+ "derive_more",
+ "dotenv",
+ "env_logger",
+ "futures-util",
+ "mime",
+ "mongodb",
+ "serde",
+ "serde_json",
+ "tokio",
 ]
 
 [[package]]

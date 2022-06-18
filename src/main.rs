@@ -14,16 +14,16 @@ use errors::AppError;
 use mongodb::{Client};
 use mongodb::options::ClientOptions;
 use dotenv;
-use crate::models::AppState;
+use crate::models::{AppState, User};
 use crate::routes::{delete_users, get_users, post_users, put_users};
 
 #[actix_web::main(flavor = "multi_thread", worker_threads = 10)]
 async fn main() -> tokio::io::Result<()> {
     dotenv::dotenv().ok();
 
-    let database_name = env::var("DATABASE_NAME").unwrap();
-    let password = env::var("PASSWORD").unwrap();
-    let user = env::var("USER").unwrap();
+    let webserver_database_name = env::var("WEBSERVER_DATABASE_NAME").unwrap();
+    let webserver_password = env::var("WEBSERVER_PASSWORD").unwrap();
+    let webserver_user_name = env::var("WEBSERVER_USER_NAME").unwrap();
 
     // custom `Json` extractor configuration
     let json_cfg = web::JsonConfig::default()
@@ -47,17 +47,18 @@ async fn main() -> tokio::io::Result<()> {
 
 
     let host_name = format!(
-                            "mongodb+srv://{}:{}@cluster0.17s4f.mongodb.net/retryWrites=true&w=majority",
-                            &user,
-                            &password,
+                            "mongodb+srv://{}:{}@cluster0.17s4f.mongodb.net/?retryWrites=true&w=majority",
+                            &webserver_user_name,
+                            &webserver_password,
     );
 
     let options = ClientOptions::parse(&host_name).await.unwrap();
     let client = Client::with_options(options).unwrap();
-    let db = client.database(&database_name);
+    let db = client.database(&webserver_database_name);
+    let col = db.collection::<User>("users");
 
     let data = web::Data::new(AppState {
-        db,
+        col,
     });
 
     env_logger::init();
